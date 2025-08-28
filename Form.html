@@ -71,7 +71,7 @@
     // #################################################################
     // ## 【重要設定 1】請手動貼上您 Google Apps Script 的 API 網址 ##
     // #################################################################
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzuR9FHSFGxIwUcg_d6JE5d5aU2nHUkTGxQkcdsqilBXay04cOU_dw989LJ5-rJM4YY2A/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxIYdRtGvh3OxR4Xp0s0IzNyXorSWp5frteuPFeKu6G9l2pSOaIukiDskgQTj-H4b4KDQ/exec";
 
 
     window.onload = function() {
@@ -118,16 +118,15 @@
             problemDescription: document.getElementById('problemDescription').value
         };
         
-        // 我們自己定義要傳送的資料結構
         const payload = {
             source: 'liff_form',
             formData: formData
         };
         
-        // 使用 fetch 將資料 POST 到我們自己的 Apps Script 網址
         fetch(SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'application/json' },
             mode: 'no-cors' // 使用 no-cors 模式來避免跨域問題
         })
         .then(() => {
