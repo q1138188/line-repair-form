@@ -71,7 +71,7 @@
     // #################################################################
     // ## 【重要設定 1】請手動貼上您 Google Apps Script 的 API 網址 ##
     // #################################################################
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbygfIWbGFGd8QgF7TtrMNX_km4pUMVRkUO7oLZrDTJzdchg9DnY9AkKdAUXARxUHLoGBg/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_BgfsZJse9n9b1xh7-BB_y8nBuqFD3DLRTpJHghHK_ms8hIuOyILCp9vhNM54isBNxg/exec";
 
 
     window.onload = function() {
@@ -126,22 +126,24 @@
         fetch(SCRIPT_URL, {
             method: 'POST',
             body: JSON.stringify(payload),
-            headers: { 'Content-Type': 'application/json' },
-            mode: 'no-cors' // 使用 no-cors 模式來避免跨域問題
+            headers: { 'Content-Type': 'application/json' }
         })
-        .then(() => {
-             const resultDiv = document.getElementById('result');
-             // 因為 no-cors 模式無法讀取後端的回應，我們直接顯示通用成功訊息
-             resultDiv.innerText = "報修請求已成功送出！此視窗將自動關閉。";
-             resultDiv.className = 'success';
-             resultDiv.style.display = 'block';
-             document.getElementById('repairForm').style.display = 'none';
-             setTimeout(() => { if (liff.isInClient()) liff.closeWindow(); }, 3000);
+        .then(response => response.json())
+        .then(data => {
+            const resultDiv = document.getElementById('result');
+            if (data.status === 'success') {
+                resultDiv.innerText = data.message;
+                resultDiv.className = 'success';
+                document.getElementById('repairForm').style.display = 'none';
+                setTimeout(() => { if (liff.isInClient()) liff.closeWindow(); }, 3000);
+            } else {
+                throw new Error(data.message);
+            }
         })
         .catch(error => {
             console.error('Submit Error:', error);
             const resultDiv = document.getElementById('result');
-            resultDiv.innerText = '提交失敗，發生網路錯誤。請稍後再試。';
+            resultDiv.innerText = '提交失敗：' + error.message;
             resultDiv.className = 'error';
             resultDiv.style.display = 'block';
             submitButton.disabled = false;
