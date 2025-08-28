@@ -111,10 +111,10 @@
 
     // 後端 API 的小幫手函式
     async function callBackend(action, payload = {}) {
-        payload.action = action;
+        const body = { action, payload };
         const response = await fetch(SCRIPT_URL, {
             method: 'POST',
-            body: JSON.stringify(payload),
+            body: JSON.stringify(body),
             headers: { 'Content-Type': 'text/plain;charset=utf-8' }
         });
         if (!response.ok) {
@@ -239,9 +239,10 @@
         }
         callBackend('processAssignment', { formData: assignmentData })
             .then(responseMessage => {
-                document.getElementById('result').innerText = responseMessage;
-                document.getElementById('result').className = 'success';
-                document.getElementById('result').style.display = 'block';
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerText = responseMessage;
+                resultDiv.className = 'success';
+                resultDiv.style.display = 'block';
                 document.getElementById('manager-view').style.display = 'none';
                 setTimeout(() => { if (liff.isInClient()) liff.closeWindow(); }, 2500);
             })
@@ -269,9 +270,10 @@
         };
         callBackend('submitRepairRequest', { formData: formData })
             .then(responseMessage => {
-                document.getElementById('result').innerText = responseMessage;
-                document.getElementById('result').className = 'success';
-                document.getElementById('result').style.display = 'block';
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerText = responseMessage;
+                resultDiv.className = 'success';
+                resultDiv.style.display = 'block';
                 document.getElementById('user-view').style.display = 'none';
                 setTimeout(() => { if (liff.isInClient()) liff.closeWindow(); }, 2500);
             })
