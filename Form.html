@@ -4,16 +4,17 @@
     <base target="_top">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>設備叫修單</title>
+    <title>維修回報系統</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; color: #333; }
         .container { max-width: 600px; margin: 0 auto; background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h1 { color: #00B900; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 25px;}
+        h1, h3 { color: #00B900; text-align: center; }
+        h1 { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 25px;}
         .form-group { margin-bottom: 20px; }
         .form-group-title { font-weight: bold; font-size: 1.1em; color: #333; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         label { display: block; font-weight: bold; margin-bottom: 8px; color: #555; }
-        input[type="text"], textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        input[type="text"], textarea, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; background-color: #fff; }
         textarea { height: 120px; resize: vertical; }
         button { width: 100%; background-color: #00c300; color: white; padding: 15px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 18px; font-weight: bold; }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
@@ -21,92 +22,241 @@
         #loading, #result { text-align: center; padding: 20px; font-weight: bold; }
         #result.success { color: green; }
         #result.error { color: red; }
+        #accessDenied { text-align: center; color: #D8000C; background-color: #FFD2D2; border-radius: 5px; padding: 20px; }
         label small { font-weight: normal; color: #999; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>設備叫修單</h1>
-    <div id="loading">載入中，請稍候...</div>
+    <div id="loading">驗證身份中，請稍候...</div>
+    <div id="accessDenied" style="display:none;">
+        <h3>存取被拒絕</h3>
+        <p>您的 LINE 帳號尚未註冊使用權限，或已被停用。<br>請先私訊機器人，傳送以下指令進行註冊：</p>
+        <p style="background-color: #eee; padding: 10px; border-radius: 4px;"><b>註冊 您的姓名 您的部門</b></p>
+    </div>
     <div id="result" style="display:none;"></div>
 
-    <form id="repairForm" style="display:none;">
-        <div class="user-info">
-            你好，<span id="displayName"></span>
-        </div>
-        
-        <input type="hidden" id="userId" name="userId">
-        <input type="hidden" id="lineDisplayName" name="lineDisplayName">
-        <input type="hidden" id="groupId" name="groupId">
+    <div id="user-view" style="display:none;">
+        <h1>設備叫修單</h1>
+        <form id="repairForm">
+            <div class="user-info">你好，<span id="displayNameUser"></span></div>
+            <input type="hidden" id="lineDisplayName" name="lineDisplayName">
+            <input type="hidden" id="registeredName" name="registeredName">
+            <input type="hidden" id="groupId" name="groupId">
+            <input type="hidden" id="userId" name="userId">
+            
+            <div class="form-group">
+                <label for="vesselMachine">專案名稱 *</label>
+                <input type="text" id="vesselMachine" name="vesselMachine" required>
+            </div>
+            <div class="form-group">
+                <label for="location">位置(工區) *</label>
+                <input type="text" id="location" name="location" required>
+            </div>
+            <div class="form-group-title">待修機具</div>
+            <div class="form-group">
+                <label for="equipmentName">名稱 *</label>
+                <input type="text" id="equipmentName" name="equipmentName" required>
+            </div>
+            <div class="form-group">
+                <label for="assetNumber">資產編號 <small>(選填)</small></label>
+                <input type="text" id="assetNumber" name="assetNumber">
+            </div>
+            <div class="form-group">
+                <label for="problemDescription">狀況描述 *</label>
+                <textarea id="problemDescription" name="problemDescription" required></textarea>
+            </div>
+            <button type="submit" id="submitButtonUser">提交報修單</button>
+        </form>
+    </div>
 
-        <div class="form-group">
-            <label for="vesselMachine">專案名稱 *</label>
-            <input type="text" id="vesselMachine" name="vesselMachine" required>
-        </div>
-        <div class="form-group">
-            <label for="location">位置(工區) *</label>
-            <input type="text" id="location" name="location" required>
-        </div>
-
-        <div class="form-group-title">待修機具</div>
-
-        <div class="form-group">
-            <label for="equipmentName">名稱 *</label>
-            <input type="text" id="equipmentName" name="equipmentName" required>
-        </div>
-        <div class="form-group">
-            <label for="assetNumber">資產編號 <small>(選填)</small></label>
-            <input type="text" id="assetNumber" name="assetNumber">
-        </div>
-        <div class="form-group">
-            <label for="problemDescription">狀況描述 *</label>
-            <textarea id="problemDescription" name="problemDescription" required></textarea>
-        </div>
-
-        <button type="submit" id="submitButton">提交報修單</button>
-    </form>
+    <div id="manager-view" style="display:none;">
+        <h1>案件指派中心</h1>
+        <form id="assignmentForm">
+            <div class="user-info">你好，管理者 <span id="managerName"></span></div>
+            <div class="form-group">
+                <label for="ticketId">選擇要指派的案件</label>
+                <select id="ticketId" name="ticketId" required></select>
+            </div>
+            <div class="form-group">
+                <label>維修類型</label>
+                <div>
+                    <input type="radio" id="typeInternal" name="repairType" value="內部維修" checked> <label for="typeInternal" style="display:inline;font-weight:normal;">內部維修</label>
+                    <input type="radio" id="typeVendor" name="repairType" value="廠商維修" style="margin-left:20px;"> <label for="typeVendor" style="display:inline;font-weight:normal;">廠商維修</label>
+                </div>
+            </div>
+            <div id="internalAssign" class="form-group">
+                <label for="technician">指派人員 (從員工名單選擇)</label>
+                <select id="technician" name="technician"></select>
+            </div>
+            <div id="vendorAssign" class="form-group" style="display:none;">
+                <label for="vendorName">廠商名稱 (請手動填寫)</label>
+                <input type="text" id="vendorName" name="vendorName">
+            </div>
+            <button type="submit" id="submitButtonAssign">確認指派</button>
+        </form>
+    </div>
 </div>
 
 <script>
     // #################################################################
     // ## 【重要設定 1】請手動貼上您 Google Apps Script 的 API 網址 ##
     // #################################################################
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdmy3S7VxihlQ206xqkANS-4tgPcFSxEmJj8x_aX5qceKLMZuWFRsPtRxFX6oceLHK/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtLVBnjpv0GIMry9i8ky-gIidfj33-lPxb1L70p1-1yy13HEv8SqQxg37IE2JLbgl4/exec";
 
+    // #################################################################
+    // ## 【重要設定 2】請手動貼上您 LINE Login 頻道中的 LIFF ID ##
+    // #################################################################
+    const LIFF_ID = "2008002175-Zoa58OAJ";
+
+    // 後端 API 的小幫手函式
+    async function callBackend(action, payload = {}) {
+        payload.action = action;
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) {
+            throw new Error('網路請求失敗: ' + response.statusText);
+        }
+        const result = await response.json();
+        if (result.status === 'error') {
+            throw new Error(result.message);
+        }
+        return result.data;
+    }
 
     window.onload = function() {
-        // #################################################################
-        // ## 【重要設定 2】請手動貼上您 LINE Login 頻道中的 LIFF ID ##
-        // #################################################################
-        liff.init({ liffId: "2008002175-Zoa58OAJ" })
+        liff.init({ liffId: LIFF_ID })
             .then(() => liff.getProfile())
             .then(profile => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('repairForm').style.display = 'block';
-                document.getElementById('displayName').innerText = profile.displayName;
-                
                 document.getElementById('userId').value = profile.userId;
                 document.getElementById('lineDisplayName').value = profile.displayName;
                 const context = liff.getContext();
                 const targetId = (context && context.type !== 'none') ? (context.type === 'group' ? context.groupId : context.roomId) : profile.userId;
                 document.getElementById('groupId').value = targetId;
+                
+                return callBackend('getUserInfo', { userId: profile.userId });
             })
-            .catch(err => {
-                console.error("LIFF 初始化失敗", err);
+            .then(userInfo => {
+                handleUserRole(userInfo);
+            })
+            .catch(err => { 
+                console.error(err);
                 document.getElementById('loading').style.display = 'none';
-                const resultDiv = document.getElementById('result');
-                resultDiv.innerText = 'LIFF 應用程式初始化失敗，請確認 LIFF ID 是否正確。';
-                resultDiv.className = 'error';
-                resultDiv.style.display = 'block';
+                document.getElementById('accessDenied').style.display = 'block';
+                document.getElementById('accessDenied').innerHTML = `<h3>系統載入失敗</h3><p>${err.message}</p>`;
             });
     };
+
+    function handleUserRole(userInfo) {
+        if (!userInfo || !userInfo.isRegistered) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('accessDenied').style.display = 'block';
+            return;
+        }
+
+        if (userInfo.isManager) {
+            document.getElementById('loading').innerText = '載入管理資料中...';
+            document.getElementById('managerName').innerText = userInfo.name;
+            callBackend('getAssignmentData')
+                .then(data => populateManagerForm(data))
+                .catch(err => {
+                    alert('無法載入管理員資料: ' + err.message);
+                    document.getElementById('loading').style.display = 'none';
+                });
+        } else {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('user-view').style.display = 'block';
+            document.getElementById('displayNameUser').innerText = userInfo.name;
+            document.getElementById('registeredName').value = userInfo.name;
+        }
+    }
+
+    function populateManagerForm(data) {
+        const ticketSelect = document.getElementById('ticketId');
+        if (!data.openTickets || data.openTickets.length === 0) {
+            ticketSelect.innerHTML = '<option value="">目前沒有待處理案件</option>';
+            document.getElementById('submitButtonAssign').disabled = true;
+            document.getElementById('submitButtonAssign').innerText = '無案件可指派';
+        } else {
+            ticketSelect.innerHTML = '<option value="">-- 請選擇案件 --</option>';
+            data.openTickets.forEach(ticket => {
+                const option = document.createElement('option');
+                option.value = ticket.ticketId;
+                option.innerText = `${ticket.ticketId} (${ticket.details})`;
+                ticketSelect.appendChild(option);
+            });
+        }
+        
+        const techSelect = document.getElementById('technician');
+        techSelect.innerHTML = '<option value="">-- 請選擇人員 --</option>';
+        if (data.technicians && data.technicians.length > 0) {
+            data.technicians.forEach(tech => {
+                const option = document.createElement('option');
+                option.value = tech;
+                option.innerText = tech;
+                techSelect.appendChild(option);
+            });
+        }
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('manager-view').style.display = 'block';
+    }
     
+    document.querySelectorAll('input[name="repairType"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === '內部維修') {
+                document.getElementById('internalAssign').style.display = 'block';
+                document.getElementById('vendorAssign').style.display = 'none';
+                document.getElementById('vendorName').value = '';
+            } else {
+                document.getElementById('internalAssign').style.display = 'none';
+                document.getElementById('vendorAssign').style.display = 'block';
+                document.getElementById('technician').value = '';
+            }
+        });
+    });
+
+    document.getElementById('assignmentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const submitButton = document.getElementById('submitButtonAssign');
+        submitButton.disabled = true;
+        submitButton.innerText = '指派中...';
+        const repairType = document.querySelector('input[name="repairType"]:checked').value;
+        const assignmentData = {
+            ticketId: document.getElementById('ticketId').value,
+            repairType: repairType,
+            assignee: repairType === '內部維修' ? document.getElementById('technician').value : document.getElementById('vendorName').value,
+            managerUserId: document.getElementById('userId').value
+        };
+        if (!assignmentData.ticketId || !assignmentData.assignee) {
+            alert('請選擇案件並指定處理人員或廠商。');
+            submitButton.disabled = false;
+            submitButton.innerText = '確認指派';
+            return;
+        }
+        callBackend('processAssignment', { formData: assignmentData })
+            .then(responseMessage => {
+                document.getElementById('result').innerText = responseMessage;
+                document.getElementById('result').className = 'success';
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('manager-view').style.display = 'none';
+                setTimeout(() => { if (liff.isInClient()) liff.closeWindow(); }, 2500);
+            })
+            .catch(err => {
+                alert('指派失敗：' + err.message);
+                submitButton.disabled = false;
+                submitButton.innerText = '確認指派';
+            });
+    });
+
     document.getElementById('repairForm').addEventListener('submit', function(event) {
         event.preventDefault();
-        const submitButton = document.getElementById('submitButton');
+        const submitButton = document.getElementById('submitButtonUser');
         submitButton.disabled = true;
-        submitButton.innerText = '傳送中...';
-        
+        submitButton.innerText = '提交中...';
         const formData = {
             userId: document.getElementById('userId').value,
             lineDisplayName: document.getElementById('lineDisplayName').value,
@@ -117,40 +267,20 @@
             assetNumber: document.getElementById('assetNumber').value,
             problemDescription: document.getElementById('problemDescription').value
         };
-        
-        const payload = {
-            source: 'liff_form',
-            formData: formData
-        };
-        
-        fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify(payload),
-            headers: { 'Content-Type': 'application/json' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const resultDiv = document.getElementById('result');
-            if (data.status === 'success') {
-                resultDiv.innerText = data.message;
-                resultDiv.className = 'success';
-                document.getElementById('repairForm').style.display = 'none';
-                setTimeout(() => { if (liff.isInClient()) liff.closeWindow(); }, 3000);
-            } else {
-                throw new Error(data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Submit Error:', error);
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerText = '提交失敗：' + error.message;
-            resultDiv.className = 'error';
-            resultDiv.style.display = 'block';
-            submitButton.disabled = false;
-            submitButton.innerText = '重新提交';
-        });
+        callBackend('submitRepairRequest', { formData: formData })
+            .then(responseMessage => {
+                document.getElementById('result').innerText = responseMessage;
+                document.getElementById('result').className = 'success';
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('user-view').style.display = 'none';
+                setTimeout(() => { if (liff.isInClient()) liff.closeWindow(); }, 2500);
+            })
+            .catch(error => {
+                alert('提交失敗：' + error.message);
+                submitButton.disabled = false;
+                submitButton.innerText = '提交報修單';
+            });
     });
 </script>
-
 </body>
 </html>
